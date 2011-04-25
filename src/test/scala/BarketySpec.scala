@@ -7,9 +7,56 @@ import akka.testkit.TestKit
 import java.util.concurrent.TimeUnit
 import akka.actor.{ActorRef, Actor}
 
-import us.troutwine.barkety.JID
+import us.troutwine.barkety.{JID,ChatSupervisor,RegisterParent}
+import us.troutwine.barkety.{OutboundMessage,InboundMessage,CreateChat}
 
-class BarketySpec extends Spec with ShouldMatchers {
+class BarketySpec extends Spec with ShouldMatchers with TestKit {
+
+  describe("The Chat supervisor") {
+    it("should boot with no problems") {
+      val jid = JID("barketyTest@jabber.org")
+      val chatsupRef = actorOf(new ChatSupervisor(jid, "123456")).start
+      chatsupRef.stop
+    }
+
+    it("should create a chatter on request") {
+      val jid = JID("barketyTest@jabber.org")
+      val me  = JID("troutwine@jabber.org")
+      val chatsup = actorOf(new ChatSupervisor(jid, "123456")).start
+      (chatsup !! CreateChat(me)) should not { be === None }
+      chatsup.stop
+    }
+
+    it("should send me a nice message") {
+      val jid = JID("barketyTest@jabber.org")
+      val me  = JID("troutwine@jabber.org")
+      val chatsup = actorOf(new ChatSupervisor(jid, "123456")).start
+      (chatsup !! CreateChat(me)) match {
+        case Some(chatter:ActorRef) =>
+          chatter ! OutboundMessage("Hi, you!")
+        case None => fail()
+      }
+      Thread.sleep(1000)
+      chatsup.stop
+    }
+
+    // BUG: Does not work as I expect
+    // it("should allow me to send it a message") {
+    //   val jid = JID("barketyTest@jabber.org")
+    //   val me  = JID("troutwine@jabber.org")
+    //   val chatsup = actorOf(new ChatSupervisor(jid, "123456")).start
+    //   (chatsup !! CreateChat(me)) match {
+    //     case Some(chatter:ActorRef) =>
+    //       chatter ! RegisterParent(testActor)
+    //       chatter ! OutboundMessage("Reply back with 'hi'")
+    //       within (10 seconds) {
+    //         expectMsg(InboundMessage("hi"))
+    //       }
+    //     case None => fail()
+    //   }
+    //   chatsup.stop
+    // }
+   }
 
   describe("The JID extractor") {
 
