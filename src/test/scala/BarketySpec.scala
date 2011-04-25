@@ -14,27 +14,28 @@ class BarketySpec extends Spec with ShouldMatchers {
   describe("The JID extractor") {
 
     it("should extract the full-JID components") {
-      "troutwine@jabber.org/helpful" match {
-        case JID(username:String,domain:String,resource:String) =>
-          username should be === "troutwine"
-          domain should be === "jabber.org"
-          resource should be === "helpful"
-      }
+      val jid = JID("troutwine@jabber.org/helpful")
+      jid.username should be === "troutwine"
+      jid.domain should be === "jabber.org"
+      jid.resource should be === Some("helpful")
     }
+
     it("should extract partial JID components") {
-      "troutwine@jabber.org" match {
-        case JID(username:String,domain:String) =>
-          username should be === "troutwine"
-          domain should be === "jabber.org"
-      }
+      val jid = JID("troutwine@jabber.org")
+      jid.username should be === "troutwine"
+      jid.domain should be === "jabber.org"
+      jid.resource should be === None
     }
+
+    it("should convert to implict string") {
+      val jid:String = JID("troutwine@jabber.org/helpful")
+      jid should be === "troutwine@jabber.org/helpful"
+    }
+
     it("should reject nonsense") {
-      JID.unapplySeq("hihowareyou?") should be ('empty)
-    }
-    it("should have inverse properties") {
-      JID.apply( (JID.unapplySeq("troutwine@jabber.org")).get ) should be === "troutwine@jabber.org"
-      JID.apply( (JID.unapplySeq("troutwine@jabber.org/")).get ) should be === "troutwine@jabber.org"
-      JID.apply( (JID.unapplySeq("troutwine@jabber.org/happy")).get ) should be === "troutwine@jabber.org/happy"
+      intercept[RuntimeException] {
+        JID("hihowareyou?")
+      }
     }
   }
 

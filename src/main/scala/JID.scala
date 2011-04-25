@@ -2,23 +2,28 @@ package us.troutwine.barkety
 
 import scala.util.matching.Regex
 
+case class JID(username:String, domain:String, resource:Option[String])
+
 object JID {
-  private val jidRe = new Regex("""(?i)(\w+)@([^/]+)/?+(.+)?+""")
+  val re = new Regex("""(?i)(\w+)@([^/]+)/?+(.+)?+""")
 
-  def apply(parts: Seq[String]): String =
-    parts.size match {
-      case 2 => """%s@%s""".format(parts:_*)
-      case 3 => """%s@%s/%s""".format(parts:_*)
-    }
-
-  def unapplySeq(jid:String): Option[Seq[String]] =
+  def apply(u:String, d:String) = new JID(u, d, None)
+  def apply(u:String, d:String, r:String) = new JID(u, d, Some(r))
+  def apply(jid:String) = {
     jid match {
-      case jidRe(username,domain,resource) =>
-        if (resource == null)
-          Some( Seq(username,domain) )
+      case re(u,d,r) =>
+        if (r == null)
+          new JID(u,d,None)
         else
-          Some( Seq(username,domain,resource) )
-      case _ => None
+          new JID(u,d, Some(r))
+      case _ =>
+        throw new RuntimeException("'%s' is not a valid JID".format(jid))
     }
-}
+  }
 
+  // import this implicit to enable you to pass a JID as a string
+  implicit def jidToString(jid:JID):String = jid match {
+    case JID(s, d, Some(r)) => s + "@" + d + "/" + r
+    case JID(s, d, None) => s + "@" + d
+  }
+}
