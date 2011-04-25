@@ -37,6 +37,14 @@ class BarketySpec extends Spec with ShouldMatchers {
         JID("hihowareyou?")
       }
     }
+
+    it("should provide sane equality") {
+      val jid0:JID = JID("troutwine@jabber.org/")
+      val jid1:JID = JID("troutwine@jabber.org/")
+      jid1 should be === jid0
+      val jid2:JID = JID("troutwine@jabber.org/helpful")
+      jid1 should not { be === jid2 }
+    }
   }
 
 }

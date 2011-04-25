@@ -21,9 +21,9 @@ object JID {
     }
   }
 
-  // import this implicit to enable you to pass a JID as a string
   implicit def jidToString(jid:JID):String = jid match {
     case JID(s, d, Some(r)) => s + "@" + d + "/" + r
     case JID(s, d, None) => s + "@" + d
   }
+
 }
