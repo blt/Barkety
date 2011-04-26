@@ -55,6 +55,8 @@ private class Chatter(chat:Chat) extends Actor {
       parent = Some(ref)
     case OutboundMessage(msg) =>
       chat.sendMessage(msg)
+    case msg:String =>
+      chat.sendMessage(msg)
     case msg:ReceivedMessage =>
       parent match {
         case Some(ref) => ref ! InboundMessage(msg.msg)
