@@ -34,7 +34,8 @@ private class ChatListener(parent:ActorRef) extends ChatManagerListener {
 
 private class MsgListener(parent:ActorRef) extends MessageListener {
   override def processMessage(chat:Chat,msg:Message) = {
-    parent ! ReceivedMessage(msg.getBody)
+    if (msg.getBody != null)
+      parent ! ReceivedMessage(msg.getBody)
   }
 }
 

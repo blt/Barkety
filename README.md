@@ -20,7 +20,7 @@ Kindly include this in your project definition:
 
 ```
 val troutwineRepo = "troutwine.us repository" at "http://maven.troutwine.us/"
-val phone = "us.troutwine" %% "Barkety" % "0.1.2"
+val phone = "us.troutwine" %% "Barkety" % "0.1.3"
 ```
 
 Usage
