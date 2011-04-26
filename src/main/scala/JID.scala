@@ -2,7 +2,11 @@ package us.troutwine.barkety
 
 import scala.util.matching.Regex
 
-case class JID(username:String, domain:String, resource:Option[String])
+case class JID(username:String, domain:String, resource:Option[String]) extends Ordered[JID] {
+  override def compare(that:JID) = {
+    (that:String) compare (this:String)
+  }
+}
 
 object JID {
   val re = new Regex("""(?i)(\w+)@([^/]+)/?+(.+)?+""")
