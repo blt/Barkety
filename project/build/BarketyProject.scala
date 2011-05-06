@@ -7,7 +7,7 @@ class BarketyProject(info: ProjectInfo) extends DefaultProject(info) with AkkaPr
   val smack = "jivesoftware" % "smackx" % "3.1.0"
   val smackx= "jivesoftware" % "smackx" % "3.1.0"
 
-  val scalaTest = "org.scalatest" % "scalatest" % "1.4-SNAPSHOT"
+  val scalaTest = "org.scalatest" % "scalatest" % "1.4.RC2"
 
   override def managedStyle = ManagedStyle.Maven
   lazy val publishTo = Resolver.sftp("troutwine.us repository", "maven.troutwine.us", "/srv/http/us/troutwine/maven/")
