@@ -91,6 +91,12 @@ class BarketySpec extends Spec with ShouldMatchers with TestKit {
       jid1 should be === jid0
       val jid2:JID = JID("troutwine@jabber.org/helpful")
       jid1 should not { be === jid2 }
+      val jid3:JID = JID("morbo@earth.org")
+      jid1 should not { be === jid3 }
+      jid0 match {
+        case jid1 =>
+        case _ => fail
+      }
     }
 
     it("should enforce an arbitrary ordering") {

@@ -6,6 +6,16 @@ case class JID(username:String, domain:String, resource:Option[String]) extends 
   override def compare(that:JID) = {
     (that:String) compare (this:String)
   }
+
+  override def equals(other:Any): Boolean =
+    other match {
+      case that:JID =>
+        (that canEqual this) &&
+        ((this compare that) == 0)
+      case _ => false
+    }
+
+  override def canEqual(other:Any): Boolean = other.isInstanceOf[JID]
 }
 
 object JID {
