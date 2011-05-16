@@ -94,7 +94,7 @@ class BarketySpec extends Spec with ShouldMatchers with TestKit {
       val jid3:JID = JID("morbo@earth.org")
       jid1 should not { be === jid3 }
       jid0 match {
-        case jid1 =>
+        case `jid1` =>
         case _ => fail
       }
     }

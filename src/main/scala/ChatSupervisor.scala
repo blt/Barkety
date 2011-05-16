@@ -47,7 +47,7 @@ private class MsgLogger extends MessageListener {
   }
 }
 
-private class Chatter(chat:Chat) extends Actor {
+private class Chatter(chat:Chat, roster:Roster) extends Actor {
   chat.addMessageListener(new MsgListener(self))
   var parent:Option[ActorRef] = None
 
@@ -55,7 +55,8 @@ private class Chatter(chat:Chat) extends Actor {
     case RegisterParent(ref) =>
       parent = Some(ref)
     case OutboundMessage(msg) =>
-      chat.sendMessage(msg)
+      if ( roster.contains(chat.getParticipant) )
+        chat.sendMessage(msg)
     case msg:String =>
       chat.sendMessage(msg)
     case msg:ReceivedMessage =>
@@ -73,7 +74,7 @@ class ChatSupervisor(jid:JID, password:String) extends Actor {
   private val conn = new XMPPConnection(jid.domain)
   conn.connect()
   conn.login(jid.username, password)
-  private val roster = conn.getRoster()
+  private val roster:Roster = conn.getRoster()
   roster.setSubscriptionMode(Roster.SubscriptionMode.accept_all)
   conn.sendPacket( new Presence(Presence.Type.available) )
 
@@ -85,7 +86,7 @@ class ChatSupervisor(jid:JID, password:String) extends Actor {
       val chat = conn.getChatManager().createChat(partnerJID, msglog)
       if ( !roster.contains(partnerJID) )
         roster.createEntry(partnerJID, partnerJID, null)
-      val chatter = Actor.actorOf(new Chatter(chat)).start
+      val chatter = Actor.actorOf(new Chatter(chat, roster)).start
       self.link(chatter)
       self.reply_?(chatter)
     }
