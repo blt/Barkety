@@ -7,7 +7,7 @@ import akka.config.Supervision.AllForOneStrategy
 import scala.collection.mutable
 
 import org.jivesoftware.smack.{XMPPConnection,ChatManagerListener,Chat}
-import org.jivesoftware.smack.{MessageListener,Roster}
+import org.jivesoftware.smack.{MessageListener,Roster,ConnectionConfiguration}
 import org.jivesoftware.smack.packet.{Message,Presence}
 
 private sealed abstract class InternalMessage
@@ -67,13 +67,21 @@ private class Chatter(chat:Chat, roster:Roster) extends Actor {
   }
 }
 
-class ChatSupervisor(jid:JID, password:String) extends Actor {
+class ChatSupervisor(jid:JID, password:String,
+                     domain:Option[String] = None,
+                     port:Option[Int] = None) extends Actor
+{
   self.faultHandler = AllForOneStrategy(List(classOf[Throwable]), 5, 5000)
   self.id = "chatsupervisor:%s".format(jid)
 
-  private val conn = new XMPPConnection(jid.domain)
+  private val conf = new ConnectionConfiguration(domain.getOrElse(jid.domain),
+                          port.getOrElse(5222), jid.domain)
+  private val conn = new XMPPConnection(conf)
   conn.connect()
-  conn.login(jid.username, password)
+  domain match {
+    case Some("talk.google.com") => conn.login(jid, password)
+    case _ => conn.login(jid.username, password)
+  }
   private val roster:Roster = conn.getRoster()
   roster.setSubscriptionMode(Roster.SubscriptionMode.accept_all)
   conn.sendPacket( new Presence(Presence.Type.available) )

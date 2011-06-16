@@ -40,7 +40,15 @@ class BarketySpec extends Spec with ShouldMatchers with TestKit {
       chatsup.stop
     }
 
-    // BUG: Does not work as I expect
+    it("should be able to connect to a Google domain") {
+      val fakey = JID("text1@fluentsms.com")
+      val chatsup = actorOf(
+        new ChatSupervisor(fakey, "Text1234", Some("talk.google.com"))
+      ).start
+      expectNoMsg(5 seconds)
+      chatsup.stop
+    }
+
     // it("should allow me to send it a message") {
     //   val jid = JID("barketyTest@jabber.org")
     //   val me  = JID("troutwine@jabber.org")
