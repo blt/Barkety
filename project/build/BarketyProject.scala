@@ -5,10 +5,12 @@ class BarketyProject(info: ProjectInfo) extends DefaultProject(info) with AkkaPr
   val akkaTestKit = akkaModule("testkit")
 
   // Bundled owing to lack of jars in any public repository.
-  // val smack = "jivesoftware" % "smack" % "3.2.0"
-  // val smackx= "jivesoftware" % "smackx" % "3.2.0"
+  val smack = "jivesoftware" % "smack" % "3.2.0"
+  val smackx= "jivesoftware" % "smackx" % "3.2.0"
 
   val scalaTest = "org.scalatest" %% "scalatest" % "1.4.1"
+
+  val oleGlassy = "Glassfish" at "http://maven.glassfish.org/content/repositories/maven.hudson-labs.org"
 
   override def managedStyle = ManagedStyle.Maven
   lazy val publishTo = Resolver.sftp("troutwine.us repository", "maven.troutwine.us", "/srv/http/us/troutwine/maven/")
