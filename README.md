@@ -13,16 +13,6 @@ fulfill my desires:
 Akka's bindings to camel-xmpp provide the last two and plain Smack allows only
 the first point.
 
-Installation
-------------
-
-Kindly include this in your project definition:
-
-```
-val troutwineRepo = "troutwine.us repository" at "http://maven.troutwine.us/"
-val phone = "us.troutwine" %% "Barkety" % "0.1.3"
-```
-
 Usage
 -----
 
