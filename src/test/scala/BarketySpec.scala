@@ -23,7 +23,7 @@ class BarketySpec extends Spec with ShouldMatchers with TestKit {
       val jid = JID("barketyTest@jabber.org")
       val me  = JID("troutwine@jabber.org")
       val chatsup = actorOf(new ChatSupervisor(jid, "123456")).start
-      (chatsup !! CreateChat(me)) should not { be === None }
+      (chatsup ? CreateChat(me)).as[ActorRef] should not { be === None }
       chatsup.stop
     }
 
@@ -31,7 +31,7 @@ class BarketySpec extends Spec with ShouldMatchers with TestKit {
       val jid = JID("barketyTest@jabber.org")
       val me  = JID("troutwine@jabber.org")
       val chatsup = actorOf(new ChatSupervisor(jid, "123456")).start
-      (chatsup !! CreateChat(me)) match {
+      (chatsup ? CreateChat(me)).as[ActorRef] match {
         case Some(chatter:ActorRef) =>
           chatter ! OutboundMessage("Hi, you!")
         case None => fail()
