@@ -3,12 +3,11 @@ package us.troutwine.barkety
 import akka.actor.{Actor,ActorRef}
 import akka.event.{EventHandler => log}
 import akka.config.Supervision.AllForOneStrategy
-
 import scala.collection.mutable
-
 import org.jivesoftware.smack.{XMPPConnection,ChatManagerListener,Chat}
-import org.jivesoftware.smack.{MessageListener,Roster,ConnectionConfiguration}
-import org.jivesoftware.smack.packet.{Message,Presence}
+import org.jivesoftware.smack.{MessageListener,Roster,ConnectionConfiguration, PacketListener}
+import org.jivesoftware.smack.packet.{Message,Packet,Presence}
+import org.jivesoftware.smackx.muc.{MultiUserChat,DiscussionHistory}
 
 private sealed abstract class InternalMessage
 private case class RemoteChatCreated(jid:JID,chat:Chat) extends InternalMessage
@@ -19,6 +18,7 @@ case class CreateChat(jid:JID) extends Memo
 case class RegisterParent(ref:ActorRef) extends Memo
 case class InboundMessage(msg:String) extends Memo
 case class OutboundMessage(msg:String) extends Memo
+case class JoinRoom(room: JID, nickname: Option[String] = None) extends Memo
 
 private class ChatListener(parent:ActorRef) extends ChatManagerListener {
   override def chatCreated(chat:Chat, createdLocally:Boolean) = {
@@ -51,7 +51,7 @@ private class Chatter(chat:Chat, roster:Roster) extends Actor {
   chat.addMessageListener(new MsgListener(self))
   var parent:Option[ActorRef] = None
 
-  override def receive = {
+  def receive = {
     case RegisterParent(ref) =>
       parent = Some(ref)
     case OutboundMessage(msg) =>
@@ -60,10 +60,35 @@ private class Chatter(chat:Chat, roster:Roster) extends Actor {
     case msg:String =>
       chat.sendMessage(msg)
     case msg:ReceivedMessage =>
-      parent match {
-        case Some(ref) => ref ! InboundMessage(msg.msg)
-        case None =>
+      parent map { _ ! InboundMessage(msg.msg) }
+  }
+}
+
+class RoomChatter(muc: MultiUserChat, nickname: String) extends Actor {
+  muc.addMessageListener(new PacketListener() {
+    def processPacket(packet: Packet) {
+      packet match {
+        case msg: Message =>
+          if (msg.getBody != null)
+            self ! ReceivedMessage(msg.getBody)
       }
+    }
+  })
+  var parent:Option[ActorRef] = None
+  
+  case object Join
+  
+  override def preStart() = self ! Join
+  
+  def receive = {
+    case Join =>
+      muc.join(nickname)
+    case RegisterParent(ref) =>
+      parent = Some(ref)
+    case msg: ReceivedMessage =>
+      parent map { _ ! InboundMessage(msg.msg) }
+    case msg: String => 
+      muc.sendMessage(msg)
   }
 }
 
@@ -89,18 +114,21 @@ class ChatSupervisor(jid:JID, password:String,
   private val chats:mutable.Map[JID,Chat] = new mutable.HashMap
   private val msglog:MsgLogger = new MsgLogger
 
-  override def receive = {
+  def receive = {
     case CreateChat(partnerJID) => {
       val chat = conn.getChatManager().createChat(partnerJID, msglog)
       if ( !roster.contains(partnerJID) )
         roster.createEntry(partnerJID, partnerJID, null)
       val chatter = Actor.actorOf(new Chatter(chat, roster)).start
       self.link(chatter)
-      self.reply_?(chatter)
+      self.tryReply(chatter)
     }
     case RemoteChatCreated(partnerJID,chat) =>
       chats.put(partnerJID,chat)
-    case _ => throw new RuntimeException("I do nothing!")
+    case JoinRoom(roomId, nickname) => 
+      val roomChatter = Actor.actorOf(new RoomChatter(new MultiUserChat(conn, roomId), nickname.getOrElse(jid.username))).start()
+      self.link(roomChatter)
+      self.tryReply(roomChatter)
   }
 
   override def postStop = {
