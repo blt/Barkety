@@ -11,7 +11,8 @@ scalacOptions ++= Seq("-unchecked", "-deprecation")
 resolvers += "Glassfish" at "http://maven.glassfish.org/content/repositories/maven.hudson-labs.org"
 
 libraryDependencies ++= Seq(
-  "org.scalatest" %% "scalatest" % "1.6.1"
+  "org.scalatest" %% "scalatest" % "1.6.1",
+  "org.mockito" % "mockito-core" % "1.8.5"
   ) map { _ % "test" }
 
 libraryDependencies ++= Seq("actor") map { "se.scalablesolutions.akka" % "akka-%s".format(_) % "1.2" }

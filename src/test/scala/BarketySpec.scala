@@ -1,16 +1,16 @@
+package us.troutwine.barkety
+
 import org.scalatest.{Spec,BeforeAndAfterAll}
 import org.scalatest.matchers.ShouldMatchers
-
 import akka.actor.Actor._
 import akka.util.duration._
 import akka.testkit.TestKit
 import java.util.concurrent.TimeUnit
 import akka.actor.{ActorRef, Actor}
+import org.scalatest.mock.MockitoSugar
+import akka.testkit.TestProbe
 
-import us.troutwine.barkety.{JID,ChatSupervisor,RegisterParent}
-import us.troutwine.barkety.{OutboundMessage,InboundMessage,CreateChat}
-
-class BarketySpec extends Spec with ShouldMatchers with TestKit {
+class BarketySpec extends Spec with ShouldMatchers with TestKit with MockitoSugar {
 
   describe("The Chat supervisor") {
     it("should boot with no problems") {
@@ -120,6 +120,42 @@ class BarketySpec extends Spec with ShouldMatchers with TestKit {
       jid1 should be >= jid0
       jid2 should be >= jid0
       jid1 should be >= jid2
+    }
+  }
+  
+  describe("Bot builder") {
+    import Bot._
+    import BotDefaults._
+    import org.mockito.Mockito.verify
+    
+    it("should match messages from defined command triggers") {
+      val ref = mock[ActorRef]
+      
+      val command = newRoomBot(ref).newCommand("dostuff", "dostuff help") { (room: ActorRef, args: Array[String]) =>
+        room should be === ref
+        args should be === Array("foo", "bar")
+      }
+      val boom: Trigger = { case _ => fail(new RuntimeException("didn't match")) }
+      (command.trigger orElse boom)(ref, "!dostuff foo bar") 
+      
+      val alwaysTrue: Trigger = { case _ => 1 should be === 1 }
+      val nonMatching = newRoomBot(ref).newCommand("wikiwiki", "wikiwiki help") { (room: ActorRef, args: Array[String]) => fail(new RuntimeException("matched but shouldn't")) }
+      (nonMatching.trigger orElse alwaysTrue)(ref, "!dostuff foo bar")
+    }
+    
+    it("should build room bot with generated help command") {
+      val room = TestProbe()
+      val builder = newRoomBot(room.ref)
+      builder += ("wikiwiki", "wikiwiki help", { (room: ActorRef, args: Array[String]) => () })
+      val bot = builder.result().start()
+      room.expectMsgClass((100, TimeUnit.MILLISECONDS), classOf[RegisterParent])
+      bot ! InboundMessage("!help")
+      room.expectMsgPF((100, TimeUnit.MILLISECONDS)) {
+        case help: String =>
+          help should not be null
+          help should startWith("help:")
+          help.contains("wikiwiki: wikiwiki help") should be === true
+      }
     }
   }
 

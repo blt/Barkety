@@ -18,7 +18,7 @@ case class CreateChat(jid:JID) extends Memo
 case class RegisterParent(ref:ActorRef) extends Memo
 case class InboundMessage(msg:String) extends Memo
 case class OutboundMessage(msg:String) extends Memo
-case class JoinRoom(room: JID, nickname: Option[String] = None) extends Memo
+case class JoinRoom(room: JID, nickname: Option[String] = None, roomPassword: Option[String] = None) extends Memo
 
 private class ChatListener(parent:ActorRef) extends ChatManagerListener {
   override def chatCreated(chat:Chat, createdLocally:Boolean) = {
@@ -64,7 +64,7 @@ private class Chatter(chat:Chat, roster:Roster) extends Actor {
   }
 }
 
-class RoomChatter(muc: MultiUserChat, nickname: String) extends Actor {
+class RoomChatter(muc: MultiUserChat, nickname: String, password: Option[String] = None) extends Actor {
   muc.addMessageListener(new PacketListener() {
     def processPacket(packet: Packet) {
       packet match {
@@ -80,9 +80,13 @@ class RoomChatter(muc: MultiUserChat, nickname: String) extends Actor {
   
   override def preStart() = self ! Join
   
+  override def postStop() = muc.leave() // TODO: If receiving Join blows up, will this call blow up too?
+  
   def receive = {
     case Join =>
-      muc.join(nickname)
+      val history = new DiscussionHistory()
+      history.setMaxChars(0) // Don't get anything when joining
+      muc.join(nickname, password.getOrElse(null), history, 5000)
     case RegisterParent(ref) =>
       parent = Some(ref)
     case msg: ReceivedMessage =>
@@ -125,8 +129,8 @@ class ChatSupervisor(jid:JID, password:String,
     }
     case RemoteChatCreated(partnerJID,chat) =>
       chats.put(partnerJID,chat)
-    case JoinRoom(roomId, nickname) => 
-      val roomChatter = Actor.actorOf(new RoomChatter(new MultiUserChat(conn, roomId), nickname.getOrElse(jid.username))).start()
+    case JoinRoom(roomId, nickname, password) => 
+      val roomChatter = Actor.actorOf(new RoomChatter(new MultiUserChat(conn, roomId), nickname.getOrElse(jid.username), password)).start()
       self.link(roomChatter)
       self.tryReply(roomChatter)
   }
