@@ -74,6 +74,12 @@ class BarketySpec extends Spec with ShouldMatchers with TestKit {
       jid.domain should be === "jabber.org"
       jid.resource should be === Some("helpful")
     }
+    
+    it("should handle certain non-word characters in JIDs") {
+      JID("troutwine-foo@jabber.org/wassup")
+      JID("troutwine_foo@jabber.org/wassup")
+      JID("troutwine.foo@jabber.org/wassup")
+    }
 
     it("should extract partial JID components") {
       val jid = JID("troutwine@jabber.org")
