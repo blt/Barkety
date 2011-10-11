@@ -19,7 +19,7 @@ case class JID(username:String, domain:String, resource:Option[String]) extends 
 }
 
 object JID {
-  val re = new Regex("""(?i)(\w+)@([^/]+)/?+(.+)?+""")
+  val re = new Regex("""(?i)([\w-_\.]+)@([^/]+)/?+(.+)?+""")
 
   def apply(u:String, d:String) = new JID(u, d, None)
   def apply(u:String, d:String, r:String) = new JID(u, d, Some(r))
